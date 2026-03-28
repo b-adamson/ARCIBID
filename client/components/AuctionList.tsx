@@ -126,7 +126,9 @@ function AuctionCard({ item }: { item: AuctionSummary }) {
           </p>
 
           <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <Field label="Token mint" value={item.tokenMint ? shorten(item.tokenMint) : "Metadata only"} />
+            {!isMetadataOnly ? (
+  <Field label="Token mint" value={item.tokenMint ? shorten(item.tokenMint) : "Unavailable"} />
+) : null}
             <Field label="Amount" value={isMetadataOnly ? "Metadata only" : item.saleAmount || "0"} />
             <Field label="Auction PK" value={shorten(item.auctionPk)} copyValue={item.auctionPk} />
             <Field

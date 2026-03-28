@@ -350,7 +350,38 @@ function formatTimeLeft(seconds: number | null): string {
 function getBidCount(auction: any): number {
   return Number(auction?.bidCount ?? auction?.bid_count ?? 0);
 }
+useEffect(() => {
+  let cancelled = false;
 
+  (async () => {
+    try {
+      console.log("auctionPkStr", auctionPkStr);
+      if (!auctionPkStr) return;
+
+      const program = programClient ?? readOnlyProgram;
+      if (!program) return;
+
+      const auctionPk = new PublicKey(auctionPkStr);
+      const auction = await program.account.auction.fetchNullable(auctionPk);
+
+      if (cancelled) return;
+
+      if (!auction) {
+        setStatus("Auction not found on chain yet.");
+        return;
+      }
+
+      setAuctionData(auction);
+    } catch (e) {
+      console.error("bid fetch failed:", e);
+      if (!cancelled) setStatus(String(e));
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, [auctionPkStr, programClient, readOnlyProgram]);
 useEffect(() => {
   let cancelled = false;
 
@@ -458,47 +489,6 @@ useEffect(() => {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        if (!auctionPkStr || !publicKey || (!programClient && !readOnlyProgram)) {
-          setAuctionData(null);
-          setAuctionEnded(false);
-          setIsWinner(false);
-          return;
-        }
-
-        const program = programClient ?? readOnlyProgram;
-        const auctionPk = new PublicKey(auctionPkStr);
-        const auction = await program.account.auction.fetch(auctionPk);
-        if (cancelled) return;
-
-        setAuctionData(auction);
-
-const statusKey = enumKey(auction.status).toLowerCase();
-const endTime = Number(auction.endTime ?? auction.end_time ?? 0);
-const now = Math.floor(Date.now() / 1000);
-const ended = now >= endTime || statusKey === "closed" || statusKey === "resolved";
-
-setAuctionEnded(ended);
-
-
-
-        setIsWinner(isWinnerOfAuction(auction, publicKey.toBase58()));
-      } catch {
-        if (!cancelled) {
-          setAuctionData(null);
-          setAuctionEnded(false);
-          setIsWinner(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [auctionPkStr, publicKey, programClient, readOnlyProgram]);
 
   async function callPlaceBid(
   auctionPk: string,

@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import BidClient from "./BidClient";
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
-  searchParams: { auctionPk?: string };
+  searchParams: Promise<{ auctionPk?: string }>;
 }) {
+  const { auctionPk } = await searchParams;
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <BidClient auctionPk={searchParams.auctionPk ?? null} />
+      <BidClient auctionPk={auctionPk ?? null} />
     </Suspense>
   );
 }
